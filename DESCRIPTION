@@ -1,0 +1,32 @@
+Package: PracticalBayesianRegressionR
+Type: Package
+Title: 'brms'-Style Bayesian Regression with a Julia Back End
+Version: 0.1.0
+Authors@R: person("Arthur", "Newbury", email = "a.r.newbury@exeter.ac.uk",
+    role = c("aut", "cre"))
+Description: Fit Bayesian regression models -- generalised linear, multilevel
+    and distributional models -- with the formula, family and prior syntax of
+    'brms'. Models are fitted by 'PracticalBayesianRegression.jl', which
+    builds each model's log density and its gradient in closed form from the
+    formula and samples it with its own NUTS. A model can also be compiled
+    once into a standalone executable that is kept in a model store shared
+    with the Julia package; a compiled model refits to new data without
+    starting Julia at all.
+License: MIT + file LICENSE
+URL: https://github.com/EvoArt/PracticalBayesianRegressionR
+BugReports: https://github.com/EvoArt/PracticalBayesianRegressionR/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.0)
+Imports:
+    loo (>= 2.6.0),
+    parallel,
+    posterior (>= 1.4.0),
+    stats,
+    tools,
+    utils
+Suggests:
+    JuliaCall (>= 0.17.5),
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

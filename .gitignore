@@ -1,0 +1,16 @@
+# local working notes
+CLAUDE.md
+DESIGN.md
+
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+*.Rcheck/
+*.tar.gz
+
+# OS
+.DS_Store
+Thumbs.db
