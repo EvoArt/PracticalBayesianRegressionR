@@ -46,20 +46,38 @@ pbr_setup <- function(julia_home = NULL, project = NULL, dev = getOption("pbr.ju
   JuliaCall::julia_setup(JULIA_HOME = julia_home, verbose = verbose)
   jc <- function(src) JuliaCall::julia_command(src)
   jc(sprintf("import Pkg; Pkg.activate(%s; io = devnull)", jl_str(julia_path(project))))
-  have <- JuliaCall::julia_eval(
-    "haskey(Pkg.project().dependencies, \"PracticalBayesianRegression\")")
-  if (!isTRUE(have) || !is.null(dev)) {
-    if (!is.null(dev)) {
+  # Pkg operations are slow (Pkg.instantiate alone was 38 s a session on a
+  # cluster file system), so run them only when something must change: the
+  # package missing, or a dev checkout other than the one in use
+  where <- JuliaCall::julia_eval(paste0(
+    "let id = Base.identify_package(\"PracticalBayesianRegression\"); ",
+    "p = id === nothing ? nothing : Base.locate_package(id); ",
+    "p === nothing ? \"\" : dirname(dirname(p)) end"))
+  changed <- FALSE
+  if (!is.null(dev)) {
+    dev <- normalizePath(dev, winslash = "/", mustWork = TRUE)
+    if (!identical(normalizePath(where, winslash = "/", mustWork = FALSE), dev)) {
       message("Julia: using PracticalBayesianRegression.jl from ", dev)
-      jc(sprintf("Pkg.develop(path = %s)", jl_str(julia_path(normalizePath(dev, mustWork = TRUE)))))
-    } else {
-      message("Julia: installing PracticalBayesianRegression.jl into ", project, " (once)")
-      jc(sprintf("Pkg.add(url = %s)", jl_str(getOption("pbr.julia_url",
-                                                         "https://github.com/EvoArt/PracticalBayesianRegression.jl"))))
+      jc(sprintf("Pkg.develop(path = %s)", jl_str(julia_path(dev))))
+      changed <- TRUE
     }
+  } else if (!nzchar(where)) {
+    message("Julia: installing PracticalBayesianRegression.jl into ", project, " (once)")
+    jc(sprintf("Pkg.add(url = %s)", jl_str(getOption("pbr.julia_url",
+                                                       "https://github.com/EvoArt/PracticalBayesianRegression.jl"))))
+    changed <- TRUE
   }
-  jc("Pkg.instantiate(; io = devnull)")
-  jc("import PracticalBayesianRegression; const PBR = PracticalBayesianRegression")
+  if (changed) jc("Pkg.instantiate(; io = devnull)")
+  loaded <- tryCatch({
+    jc("import PracticalBayesianRegression")
+    TRUE
+  }, error = function(e) FALSE)
+  if (!loaded) {
+    # e.g. a manifest whose packages are not installed yet
+    jc("Pkg.instantiate(; io = devnull)")
+    jc("import PracticalBayesianRegression")
+  }
+  jc("const PBR = PracticalBayesianRegression")
   jc(sprintf("include(%s)", jl_str(julia_path(glue_file()))))
   .pbr$session <- paste0(Sys.getpid(), "-", format(Sys.time(), "%H%M%OS6"))
   .pbr$ready <- TRUE
