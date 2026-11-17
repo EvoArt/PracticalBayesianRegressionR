@@ -9,6 +9,7 @@ pbr_setup(
   project = NULL,
   dev = getOption("pbr.julia_dev"),
   threads = NULL,
+  update = FALSE,
   verbose = FALSE,
   force = FALSE
 )
@@ -25,6 +26,9 @@ lets JuliaCall find it (it respects \code{JULIA_HOME}).}
 effect if Julia has not started yet in this R session; default
 \code{JULIA_NUM_THREADS} if set, else up to 4.}
 
+\item{update}{Update PracticalBayesianRegression.jl to the newest supported
+version.}
+
 \item{verbose}{Show Julia's set-up output.}
 
 \item{force}{Run the set-up again even if Julia is already up.}
@@ -40,7 +44,9 @@ choose the Julia installation, the Julia project or the number of threads.
 \details{
 The Julia project defaults to the environment variable
 \code{PBR_JULIA_PROJECT}, else a project in this package's user data directory
-that is created on first use: with \code{dev = path} it uses your local checkout
-of PracticalBayesianRegression.jl (\code{Pkg.develop}), otherwise the GitHub
-version.
+that is created on first use. It installs the registered
+PracticalBayesianRegression.jl (a version this package supports, see
+\code{\link[=pbr_julia_compat]{pbr_julia_compat()}}); with \code{dev = path} it uses your local checkout instead
+(\code{Pkg.develop}). The first set-up downloads and precompiles the Julia
+packages, which takes a few minutes.
 }

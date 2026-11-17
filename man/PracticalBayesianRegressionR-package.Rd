@@ -32,6 +32,14 @@ PracticalBayesianRegression.jl checkout). Environment variables:
 \code{PBR_MODEL_STORE}, \code{PBR_JULIA_PROJECT}, \code{PBR_JULIAC}.
 \code{options(pbr.julia = FALSE)} forbids starting Julia (only compiled models run).
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/EvoArt/PracticalBayesianRegressionR}
+  \item Report bugs at \url{https://github.com/EvoArt/PracticalBayesianRegressionR/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Arthur Newbury \email{a.r.newbury@exeter.ac.uk}
 

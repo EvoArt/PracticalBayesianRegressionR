@@ -13,9 +13,11 @@
 #'
 #' The Julia project defaults to the environment variable
 #' `PBR_JULIA_PROJECT`, else a project in this package's user data directory
-#' that is created on first use: with `dev = path` it uses your local checkout
-#' of PracticalBayesianRegression.jl (`Pkg.develop`), otherwise the GitHub
-#' version.
+#' that is created on first use. It installs the registered
+#' PracticalBayesianRegression.jl (a version this package supports, see
+#' [pbr_julia_compat()]); with `dev = path` it uses your local checkout instead
+#' (`Pkg.develop`). The first set-up downloads and precompiles the Julia
+#' packages, which takes a few minutes.
 #'
 #' @param julia_home Directory containing the `julia` executable; `NULL`
 #'   lets JuliaCall find it (it respects `JULIA_HOME`).
@@ -24,13 +26,15 @@
 #' @param threads Julia threads, so that chains run in parallel. Only takes
 #'   effect if Julia has not started yet in this R session; default
 #'   `JULIA_NUM_THREADS` if set, else up to 4.
+#' @param update Update PracticalBayesianRegression.jl to the newest supported
+#'   version.
 #' @param verbose Show Julia's set-up output.
 #' @param force Run the set-up again even if Julia is already up.
 #' @return Invisibly `TRUE`.
 #' @export
 pbr_setup <- function(julia_home = NULL, project = NULL, dev = getOption("pbr.julia_dev"),
-                      threads = NULL, verbose = FALSE, force = FALSE) {
-  if (.pbr$ready && !force) return(invisible(TRUE))
+                      threads = NULL, update = FALSE, verbose = FALSE, force = FALSE) {
+  if (.pbr$ready && !force && !update) return(invisible(TRUE))
   if (isFALSE(getOption("pbr.julia"))) {
     stop("this needs Julia, which is switched off (options(pbr.julia = FALSE))", call. = FALSE)
   }
@@ -62,9 +66,20 @@ pbr_setup <- function(julia_home = NULL, project = NULL, dev = getOption("pbr.ju
       changed <- TRUE
     }
   } else if (!nzchar(where)) {
-    message("Julia: installing PracticalBayesianRegression.jl into ", project, " (once)")
-    jc(sprintf("Pkg.add(url = %s)", jl_str(getOption("pbr.julia_url",
-                                                       "https://github.com/EvoArt/PracticalBayesianRegression.jl"))))
+    message("Julia: installing PracticalBayesianRegression.jl ", pbr_julia_compat(), " into ", project,
+            " (once; downloading and precompiling takes a few minutes)")
+    url <- getOption("pbr.julia_url")
+    if (is.null(url)) {
+      # the registered package, held to the versions this R package supports
+      jc(sprintf("Pkg.add(Pkg.PackageSpec(name = \"PracticalBayesianRegression\", version = %s))",
+                 jl_str(pbr_julia_compat())))
+      jc(sprintf("Pkg.compat(\"PracticalBayesianRegression\", %s)", jl_str(pbr_julia_compat())))
+    } else {
+      jc(sprintf("Pkg.add(url = %s)", jl_str(url)))
+    }
+    changed <- TRUE
+  } else if (update) {
+    jc("Pkg.update(\"PracticalBayesianRegression\")")
     changed <- TRUE
   }
   if (changed) jc("Pkg.instantiate(; io = devnull)")
@@ -78,11 +93,31 @@ pbr_setup <- function(julia_home = NULL, project = NULL, dev = getOption("pbr.ju
     jc("import PracticalBayesianRegression")
   }
   jc("const PBR = PracticalBayesianRegression")
+  # an older install (e.g. from before this R version) lacks what the glue
+  # code uses: say how to update rather than fail somewhere obscure
+  ver <- JuliaCall::julia_eval("string(pkgversion(PracticalBayesianRegression))")
+  if (package_version(ver) < package_version(.pbr_julia_min)) {
+    stop("PracticalBayesianRegression.jl ", ver, " is too old for this R package (needs >= ", .pbr_julia_min,
+         "): run pbr_setup(update = TRUE) in a new R session", call. = FALSE)
+  }
+  .pbr$julia_version <- ver
   jc(sprintf("include(%s)", jl_str(julia_path(glue_file()))))
   .pbr$session <- paste0(Sys.getpid(), "-", format(Sys.time(), "%H%M%OS6"))
   .pbr$ready <- TRUE
   invisible(TRUE)
 }
+
+# the PracticalBayesianRegression.jl versions this package supports: the
+# model store and compiled models arrived in 0.2.0
+.pbr_julia_min <- "0.2.0"
+
+#' The PracticalBayesianRegression.jl versions this package supports
+#'
+#' A Julia compat specification (`"0.2"` means 0.2.0 up to, not including,
+#' 0.3.0), used when [pbr_setup()] installs the Julia package.
+#' @return A string.
+#' @export
+pbr_julia_compat <- function() "0.2"
 
 #' The Julia project PracticalBayesianRegressionR activates
 #'

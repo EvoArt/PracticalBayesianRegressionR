@@ -67,10 +67,18 @@ describes it, plus the executable bundle.
 
 ## Set-up
 
+```r
+install.packages("JuliaCall")
+remotes::install_github("EvoArt/PracticalBayesianRegressionR")
+```
+
 - Julia 1.12 or later. JuliaCall finds it on the `PATH` or through `JULIA_HOME`.
+- The first fit (or `pbr_setup()`) installs the registered PracticalBayesianRegression.jl,
+  at a version this package supports (`pbr_julia_compat()`), into a Julia project of its own
+  (`pbr_julia_project()`, or set `PBR_JULIA_PROJECT`). Downloading and precompiling takes a
+  few minutes, once. `pbr_setup(update = TRUE)` updates it later.
 - `pbr_setup(dev = "~/.julia/dev/PracticalBayesGLM")` uses a local checkout of the Julia
-  package; without `dev`, it installs the GitHub version into a project of its own
-  (`pbr_julia_project()`, or set `PBR_JULIA_PROJECT`).
+  package instead.
 - Compiling also needs a C compiler and JuliaC: either the `juliac` app on the `PATH`
   (`pkg> app add JuliaC`), or a command line in `options(pbr.juliac = ...)` or the
   `PBR_JULIAC` environment variable, for example
